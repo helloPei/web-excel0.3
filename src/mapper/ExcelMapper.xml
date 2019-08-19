@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dave.dao.ExcelDao">
+	<!-- 根据 Excel ID 查询所有 Excel内容 -->
+	<select id="selectExcelAll" resultType="com.dave.entity.ExcelAll">
+		SELECT 
+		EXCELALL_ID, EXCEL_ID, TIME, IN_CALL_ANSWER, IN_AVERAGE_HOLDING_TPC
+		, OUT_CALL_ANSWER, OUT_AVERAGE_HOLDING_TPC, SERVICE_CAPACITY, CAPACITY_NEEDED 
+		, IN_TOTAL_HOUR, OUT_TOTAL_HOUR
+		, OCCUPANCY_HOUR, OCCUPANCY_RATE 
+		FROM EXCEL_REPORT_ALL 
+		WHERE EXCEL_ID
+		IN(SELECT EXCEL_ID FROM EXCEL_REPORT 
+		WHERE EXCEL_ID = #{excelId}) ORDER BY TIME ASC
+	</select>
+	<!-- 添加 Excel -->
+	<insert id="addExcel" parameterType="com.dave.entity.Excel">
+     	 INSERT INTO EXCEL_REPORT
+      	(EXCEL_NAME, EXCEL_DATE, WEEK, CREATE_DATE)
+      	VALUES
+		(#{excelName}, #{excelDate}, #{week}, #{createDate})
+	</insert>
+	<!-- 更改 Excel, 添加 Occupancy Rate值和Type -->
+	<update id="updateExcel" parameterType="com.dave.entity.Excel">
+		UPDATE EXCEL_REPORT SET 
+		OCCUPANCY_RATE = #{occupancyRate, jdbcType=VARCHAR}
+		, TYPE = #{type, jdbcType=VARCHAR} 
+		WHERE EXCEL_ID = #{excelId}
+	</update>
+	<!-- 根据 Excel名称查询, 最新的自增 Excel ID -->
+	<select id="selectExcelByName" resultType="int">
+		select e.excelId from (SELECT EXCEL_ID as excelId
+		FROM EXCEL_REPORT WHERE EXCEL_NAME = #{excelName}
+		ORDER BY excelId DESC) e where rownum = 1
+	</select>
+	<!-- 添加 Excel内容 -->
+	<insert id="addExcelAll" parameterType="com.dave.entity.ExcelAll">
+     	 INSERT INTO EXCEL_REPORT_ALL
+      	(EXCEL_ID, TIME
+      	, IN_CALL_ANSWER, IN_AVERAGE_HOLDING_TPC
+      	, OUT_CALL_ANSWER, OUT_AVERAGE_HOLDING_TPC
+      	, SERVICE_CAPACITY, CAPACITY_NEEDED
+      	, IN_TOTAL_HOUR, OUT_TOTAL_HOUR
+      	, OCCUPANCY_HOUR, OCCUPANCY_RATE)
+      	VALUES
+		(#{excelId}, #{time}
+		, #{inCallAnswer, jdbcType=VARCHAR}, #{inAverageHoldingTPC, jdbcType=VARCHAR}
+		, #{outCallAnswer, jdbcType=VARCHAR}, #{outAverageHoldingTPC, jdbcType=VARCHAR}
+		, #{serviceCapacity, jdbcType=VARCHAR}, #{capacityNeeded, jdbcType=VARCHAR}
+		, #{inTotalHour, jdbcType=VARCHAR}, #{outTotalHour,jdbcType=VARCHAR}
+		, #{occupancyHour, jdbcType=VARCHAR}, #{occupancyRate, jdbcType=VARCHAR})
+	</insert>
+	<!-- <select id="selectExcelAllTotal" resultType="com.dave.entity.ExcelTotal">
+		select 
+		sum(IN_CALL_ANSWER) as inCallAnswerTotal
+		, sum(IN_AVERAGE_HOLDING_TPC) as inAverageHoldingTPCTotal
+		, sum(OUT_CALL_ANSWER) as outCallAnswerTotal
+		, sum(OUT_AVERAGE_HOLDING_TPC) as outAverageHoldingTPCTotal
+		, sum(SERVICE_CAPACITY) as serviceCapacityTotal
+		, sum(CAPACITY_NEEDED) as capacityNeededTotal
+		, sum(IN_TOTAL_HOUR) as inTotalHourTotal
+	    , sum(OUT_TOTAL_HOUR) as outTotalHourTotal
+	    , sum(OCCUPANCY_HOUR) as occupancyHourTotal 
+	    , sum(OCCUPANCY_RATE) as occupancyRateTotal
+		from EXCEL_REPORT_ALL where EXCEL_ID = #{excelId}
+	</select> -->
+	<!-- 根据 Excel ID 查询 Excel内容, 获取需要的Total -->
+	<select id="selectExcelAllTotal" resultType="com.dave.entity.ExcelTotal">
+		select 
+		sum(IN_CALL_ANSWER) as inCallAnswerTotal
+		, sum(IN_AVERAGE_HOLDING_TPC) as inAverageHoldingTPCTotal
+		, sum(OUT_CALL_ANSWER) as outCallAnswerTotal
+		, sum(OUT_AVERAGE_HOLDING_TPC) as outAverageHoldingTPCTotal
+		, sum(SERVICE_CAPACITY) as serviceCapacityTotal
+		, sum(CAPACITY_NEEDED) as capacityNeededTotal
+		from EXCEL_REPORT_ALL where EXCEL_ID = #{excelId}
+	</select>
+	<!-- 查询框功能查询所有 Excel,以及页面初始数据查询 -->
+	<select id="searchExcel" resultType="com.dave.entity.Excel">
+		SELECT EXCEL_ID, EXCEL_NAME, EXCEL_DATE, WEEK, CREATE_DATE, OCCUPANCY_RATE, TYPE
+		FROM (SELECT tt.*, ROWNUM AS rowno FROM
+		(SELECT * FROM EXCEL_REPORT
+		<if test="excelName != null and '' != excelName || excelDate != null and '' != excelDate">
+			WHERE 
+		</if>
+		<if test="excelName != null and '' != excelName">
+			EXCEL_NAME LIKE concat(concat('%', #{excelName}), '%') 
+		</if>
+		<if test="excelName != null and '' != excelName and excelDate != null and '' != excelDate">
+			AND
+		</if>
+		<if test="excelDate != null and '' != excelDate">
+			EXCEL_DATE LIKE concat(concat('%', #{excelDate}), '%') 
+		</if>
+		ORDER BY EXCEL_NAME DESC, to_date(EXCEL_DATE,'yyyy-MM-dd') DESC) tt
+		WHERE ROWNUM <![CDATA[<= ]]> #{pageSize}) table_alias WHERE table_alias.rowno > #{startIndex}
+	</select>
+	<select id="selectCountExcel" resultType="int">
+		SELECT count(*) FROM EXCEL_REPORT
+		<if test="excelName != null and '' != excelName || excelDate != null and '' != excelDate">
+			WHERE
+		</if>
+		<if test="excelName != null and '' != excelName">
+			EXCEL_NAME LIKE concat(concat('%', #{excelName}), '%')
+		</if>
+		<if test="excelName != null and '' != excelName and excelDate != null and '' != excelDate">
+			AND
+		</if>
+		<if test="excelDate != null and '' != excelDate">
+			EXCEL_DATE LIKE concat(concat('%', #{excelDate}), '%')
+		</if>
+	</select>
+	<!-- 根据 Excel名称查询 Excel Occupancy Rate 的最大数 -->
+	<select id="searchExcelMax" parameterType="String" resultType="com.dave.entity.Excel">
+		select * from (
+		SELECT * FROM EXCEL_REPORT WHERE EXCEL_NAME 
+		LIKE concat(concat('%', #{excelName}), '%') 
+		ORDER BY to_number(OCCUPANCY_RATE) DESC
+		) e where rownum = 1
+	</select>
+	<!-- 根据 Excel ID 查询 Excel Occupancy Rate 的最大数 -->
+	<select id="selectExcelAllMax" parameterType="int" resultType="com.dave.entity.ExcelAll">
+		select * from (
+		SELECT * FROM EXCEL_REPORT_All WHERE EXCEL_ID = #{excelId}
+		ORDER BY to_number(OCCUPANCY_RATE) DESC
+		) e where rownum = 1
+	</select>
+</mapper>
