@@ -40,4 +40,8 @@ public class SpringTest extends SpringTestBase {
 		System.out.println(excel.getExcelId());
 	}
 
+	public void helloGit() {
+		System.out.println("hello git");
+	}
+	
 }
