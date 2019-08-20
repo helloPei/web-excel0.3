@@ -41,7 +41,7 @@ public class SpringTest extends SpringTestBase {
 	}
 
 	public void helloGit() {
-		System.out.println("hello git");
+		System.out.println("left");
 	}
 	
 }
