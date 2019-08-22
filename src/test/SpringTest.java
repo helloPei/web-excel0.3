@@ -55,6 +55,7 @@ public class SpringTest extends SpringTestBase {
         System.out.println("eclipse update master3");
         System.out.println("IDEA push3");
         System.out.println("IDEA update master3");
+		System.out.println("IDEA update develop4");
 	}
 	
 }
