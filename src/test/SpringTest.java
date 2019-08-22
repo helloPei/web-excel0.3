@@ -6,14 +6,13 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Date;
-import java.util.List;
 
 /**
  * Spring测试类
  * @author davewpw
  *
  */
-public class SpringTest extends SpringTestBase {
+public class SpringTest extends test.SpringTestBase {
 	
 	@Autowired
 	private ExcelDao excelDao;
